@@ -38,7 +38,7 @@ ExtraerPoligonosAGEB <- function(archivos.estados, ruta.guardar) {
   return(todos.shp.agebs)
 }
 
-ExtractLocalitiesINEGI <- function(localities.file, files.path, ) {
+ExtractLocalitiesINEGI <- function(localities.file, files.path) {
   unzip(
     zipfile = paste0(files.path, localities.file),
     files = c(
@@ -57,14 +57,18 @@ ExtractLocalitiesINEGI <- function(localities.file, files.path, ) {
   localities.all.shp <- fix.lower.case.pattern %>%
     keep(~ grepl(".shp", .x)) %>%
     map(read_sf) %>%
-    reduce(rbind.fill) %>%
+    reduce(plyr::rbind.fill) %>%
     select(CVEGEO, NOM_ENT, NOM_MUN, NOM_LOC, CVE_AGEB, geometry) %>%
     mutate(
       id_state = as.numeric(str_sub(CVEGEO, 1, 2)),
       id_mun = as.numeric(str_sub(CVEGEO, 3, 5)),
       id_loc = as.numeric(str_sub(CVEGEO, 6, 9)),
-      clave_ageb = str_sub(CVEGEO, 10, 13)
+      clave_ageb = str_sub(CVEGEO, 10, 13),
+      NOM_LOC = iconv(NOM_LOC, 'latin1', 'UTF-8'),
+      NOM_ENT = iconv(NOM_ENT, 'latin1', 'UTF-8'),
+      NOM_MUN = iconv(NOM_MUN, 'latin1', 'UTF-8')
     ) %>%
     dplyr::rename(ageb_clave = CVEGEO, name_state = NOM_ENT, name_mun = NOM_MUN, name_loc = NOM_LOC, ageb_id = CVE_AGEB)
+  return(localities.all.shp)
 }
 
