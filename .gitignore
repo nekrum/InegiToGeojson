@@ -37,3 +37,4 @@ rsconnect/
 
 # Ignore Rstudio project file
 *.Rproj
+.Rproj.user
