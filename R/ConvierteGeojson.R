@@ -1,25 +1,30 @@
-library(sf)
-library(geojsonio)
-library(tmap)
-library(dplyr)
-
-
-PolygonStats <- function(polygon.to.check) {
+#' Estadísticas de Poligonos
+#'
+#' Permite revisar las estadísticas del tamaño del polygono, tanto en el tamñano y número de puntos que lo
+#' conforman.
+#'
+#' @param polygon.to.check Objeto sf con poligonos georeferenciados
+#'
+#' @return Texto con la estadística de tamaño y número de puntos
+#' @export
+#'
+#' @examples \dontrun{EstadisticasPoligono(PoligonoLocalidad)}
+EstadisticasPoligono <- function(polygon.to.check) {
   size.in.memory <- object_size(polygon.to.check)
   pts <- st_cast(polygon.to.check$geometry, "MULTIPOINT")
   number.points <- sum(sapply(pts, length))
   sprintf("Tamaño del poligono: %s Mb Numero de Puntos: %d", round(size.in.memory / 1000000, 1),  number.points)
 }
 
-read.locality.rur <- st_read("national_loc_rur.shp") %>% 
-  select("CVEGEO", "NOM_ENT", "NOM_MUN", "NOM_LOC") %>% 
+read.locality.rur <- st_read("national_loc_rur.shp") %>%
+  select("CVEGEO", "NOM_ENT", "NOM_MUN", "NOM_LOC") %>%
   rename( cvegeo = CVEGEO, nom_ent = NOM_ENT, nom_mun = NOM_MUN, nom_loc = NOM_LOC) %>%
   as.data.frame() %>%
   select(-geometry)
 
-read.locality.urb <- st_read("national_loc_urb.shp") %>% 
-  select("CVEGEO", "NOM_ENT", "NOM_MUN", "NOM_LOC") %>% 
-  rename(cvegeo = CVEGEO, nom_ent = NOM_ENT, nom_mun = NOM_MUN, nom_loc = NOM_LOC) %>% 
+read.locality.urb <- st_read("national_loc_urb.shp") %>%
+  select("CVEGEO", "NOM_ENT", "NOM_MUN", "NOM_LOC") %>%
+  rename(cvegeo = CVEGEO, nom_ent = NOM_ENT, nom_mun = NOM_MUN, nom_loc = NOM_LOC) %>%
   as.data.frame() %>%
   select(-geometry)
 read.locality <- data.table::rbindlist(list(read.locality.rur,read.locality.urb))
@@ -46,11 +51,11 @@ shapes.ageb.files <- list.files(
   path = "shps", recursive = T, pattern = "ageb_urb.shp", full.names = T
 )
 
-all.agebs <- purrr::map(shapes.ageb.files, st_read) %>% 
-  purrr::map(select, CVEGEO, OID) %>% 
+all.agebs <- purrr::map(shapes.ageb.files, st_read) %>%
+  purrr::map(select, CVEGEO, OID) %>%
   purrr::map(rename, id = OID, cvegeo = CVEGEO)
-all.agebs <- st_as_sf(data.table::rbindlist(all.agebs)) 
-all.agebs <- mutate(all.agebs, semicvegeo = stringr::str_sub(cvegeo, 1,9)) %>% 
+all.agebs <- st_as_sf(data.table::rbindlist(all.agebs))
+all.agebs <- mutate(all.agebs, semicvegeo = stringr::str_sub(cvegeo, 1,9)) %>%
   left_join(read.locality, by = c("semicvegeo" = "cvegeo")) %>%
   select(-semicvegeo)
 all.agebs.opti <- st_simplify(all.agebs, preserveTopology = TRUE, dTolerance = 0.02)
